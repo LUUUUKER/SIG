@@ -1,0 +1,28 @@
+[project]
+name = "sig-backend"
+version = "0.1.0"
+description = "SIG personal news & events backend (FastAPI)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.142.0",
+    "psycopg[binary]>=3.3.6",
+    "pydantic-settings>=2.15.0",
+    "sqlalchemy>=2",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+# 默认不跑需要真实数据库的集成测试；用 `pytest -m integration` 单独跑。
+# Integration tests need a live database; run them explicitly with `pytest -m integration`.
+addopts = "-m 'not integration'"
+markers = [
+    "integration: requires the Docker Compose database to be running",
+]

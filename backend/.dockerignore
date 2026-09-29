@@ -1,0 +1,6 @@
+# 概览 / Overview: 构建镜像时不发送给 Docker 的文件。/ Files excluded from the Docker build context.
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+tests

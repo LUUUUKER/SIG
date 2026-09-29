@@ -1,0 +1,29 @@
+# 概览 / Overview: 不进入版本库的文件 / files kept out of git.
+
+# 系统与编辑器 / OS & editors
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# 密钥与本地环境 / Secrets & local env (only .env.example is committed)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Node / 前端 / Frontend
+node_modules/
+dist/
+*.tsbuildinfo
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/

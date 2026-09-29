@@ -1,0 +1,20 @@
+{
+  "product": "SIG",
+  "assistant": "sig",
+  "baseline_date": "2026-09-29",
+  "source": "../news-designs/cosmos.html",
+  "snapshot": "prototype/index.html",
+  "sha256": "36aaf91f4bf514e4cf3dfc9c5640b190f344dfffef06273737a526292f553045",
+  "status": "design handoff; demo content; no live services",
+  "documents": [
+    "README.md",
+    "CLAUDE.md",
+    "PRODUCT.md",
+    "UI_FLOW.md",
+    "DESIGN_SYSTEM.md",
+    "INTERACTIONS.md",
+    "IMPLEMENTATION.md",
+    "ACCEPTANCE.md",
+    "DECISIONS.md"
+  ]
+}
