@@ -1,0 +1,128 @@
+/*
+ * 概览 / Overview
+ * 全局基础样式：reset、页面背景、按钮与链接默认外观、焦点样式、减少动态效果、滚动条。
+ * Global base styles: reset, page background, button/link defaults, focus ring, reduced motion, scrollbars.
+ * 组件自身外观写在各自的 *.module.css 中。/ Component styles live in their own *.module.css files.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  background: var(--bg);
+  font: 14px/1.7 var(--body);
+  transition:
+    background-color 0.28s,
+    color 0.28s;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color 0.16s,
+    background 0.16s;
+}
+
+button:hover,
+a:hover {
+  color: var(--accent);
+}
+
+button:focus-visible,
+a:focus-visible,
+textarea:focus-visible,
+input:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+/* 背景细网格 / Faint background grid; never competes with text. */
+.page-material {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.08;
+  background-image:
+    linear-gradient(#314552 1px, transparent 1px),
+    linear-gradient(90deg, #314552 1px, transparent 1px);
+  background-size: 80px 80px;
+  mask-image: linear-gradient(black, transparent 85%);
+}
+
+/* 仅供读屏 / Screen-reader only text. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 桌面：页面本身不滚动，只有中栏与消息区滚动。/ Desktop: only the centre column and messages scroll. */
+@media (min-width: 951px) {
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+}

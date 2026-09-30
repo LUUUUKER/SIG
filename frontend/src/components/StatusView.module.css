@@ -1,0 +1,24 @@
+/* 概览 / Overview: 状态块外观，沿用原型空态（居中、弱化文字）。/ Status block, based on the prototype empty state. */
+
+.status {
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.status p {
+  margin: 0;
+}
+
+.retry {
+  margin-top: 14px;
+  padding: 7px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--raised);
+  box-shadow:
+    3px 4px 8px var(--shade),
+    inset 1px 1px 0 var(--highlight);
+  color: var(--accent);
+  font-size: 12px;
+}

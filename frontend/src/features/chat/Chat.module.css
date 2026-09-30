@@ -1,0 +1,431 @@
+/*
+ * 概览 / Overview
+ * 助手面板样式，取自原型 .chat / .chat-head / .context / .messages / .message / .suggestions / .composer / .send
+ * 的最终生效规则。桌面：固定在右侧、顶到页面顶部，标题栏高度与页眉共用 --header-height，底线对齐。
+ * 窄屏（≤950px，方案 A）：覆盖面板从页眉下方开始，页眉开关始终可见。
+ * Assistant panel styles from the prototype's final rules. Desktop: fixed right, full height, header
+ * height shared with the page header so the bottom lines align. ≤950px (option A): an overlay that
+ * starts below the page header, so the header toggle stays visible.
+ */
+
+.chat {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 15;
+  width: var(--chat-width);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-left: 1px solid var(--line);
+  background: var(--raised);
+  box-shadow: inset 1px 0 0 var(--highlight);
+}
+
+/* 标题栏 / Header */
+.head {
+  flex-shrink: 0;
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--highlight) 10%, transparent), transparent);
+}
+
+.assistantMark {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--raised);
+  box-shadow:
+    4px 4px 8px var(--shade),
+    inset 1px 1px 0 var(--highlight);
+  font: 18px var(--display);
+  color: var(--accent);
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.headActions {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+
+.headButton {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  color: var(--muted);
+}
+
+.headButton:hover,
+.headButton[data-active='true'] {
+  background: var(--soft);
+  color: var(--accent);
+}
+
+/* 上下文 / Context */
+.context {
+  flex-shrink: 0;
+  min-width: 0;
+  margin: 10px 14px 0;
+  border-radius: 8px;
+  background: var(--bg);
+  box-shadow: var(--inset);
+}
+
+.context summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 11px 12px;
+  font-size: 10px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.context summary::-webkit-details-marker {
+  display: none;
+}
+
+.context summary::after {
+  content: '⌄';
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+.context[open] summary::after {
+  content: '⌃';
+}
+
+.context summary:focus-visible {
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.contextLabel {
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.context strong {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.contextFull {
+  padding: 0 12px 12px;
+  font-size: 11px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.contextFull p {
+  margin: 5px 0 0;
+  font-size: 10px;
+}
+
+/* 消息 / Messages */
+.messages {
+  flex: 1;
+  min-height: 0;
+  padding: 18px 16px 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.assistantLabel {
+  margin-bottom: 15px;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+}
+
+.message {
+  margin-bottom: 20px;
+  font-size: 12px;
+  line-height: 2;
+  white-space: pre-wrap;
+}
+
+.assistant {
+  color: var(--text);
+}
+
+.user {
+  margin-left: 22px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--soft);
+  box-shadow: inset 1px 1px 0 var(--highlight);
+}
+
+.messageContext {
+  display: block;
+  margin-bottom: 7px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--line);
+  font-size: 9px;
+  line-height: 1.6;
+  color: var(--muted);
+  white-space: normal;
+}
+
+.replying {
+  margin: 0 0 16px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.error button {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.rule {
+  height: 1px;
+  margin: 22px 0;
+  background: var(--line);
+}
+
+.suggestions {
+  display: grid;
+  gap: 12px;
+}
+
+.suggestions button {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--raised);
+  box-shadow:
+    3px 4px 8px var(--shade),
+    inset 1px 1px 0 var(--highlight);
+  font-size: 11px;
+  text-align: left;
+}
+
+.suggestions button:hover {
+  border-color: var(--accent);
+}
+
+.suggestions button:active {
+  box-shadow: var(--inset);
+}
+
+.note {
+  margin-top: 23px;
+  font-size: 10px;
+  line-height: 1.9;
+  color: var(--muted);
+}
+
+/* 历史 / History */
+.history {
+  flex: 1;
+  min-height: 0;
+  padding: 16px 14px 12px;
+  overflow-y: auto;
+}
+
+.historyTitle,
+.historyEmpty {
+  margin: 0 4px 12px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.historyEmpty {
+  margin-top: 40px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.historyList {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.historyItem {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--raised);
+  box-shadow:
+    3px 4px 8px var(--shade),
+    inset 1px 1px 0 var(--highlight);
+}
+
+.historySelect {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.historySelect strong,
+.historySelect span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.historySelect strong {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.historySelect span {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.historySelect[aria-current='true'] strong {
+  color: var(--accent);
+}
+
+.historyDelete {
+  width: 34px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+
+/* 输入框 / Composer */
+.composer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  min-height: 48px;
+  margin: 8px 12px 0;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+  border-radius: 10px;
+  background: var(--bg);
+  box-shadow: var(--inset);
+}
+
+.composer textarea {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  min-height: 26px;
+  max-height: 144px;
+  padding: 2px 0;
+  border: 0;
+  outline: none;
+  background: none;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 22px;
+  resize: none;
+  overflow-y: hidden;
+}
+
+.composer textarea::placeholder {
+  color: var(--muted);
+}
+
+.composer textarea:focus-visible {
+  outline: none;
+}
+
+.composer:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.send {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: 1px solid var(--fill-border);
+  border-radius: 8px;
+  background: var(--fill-bg);
+  box-shadow: var(--fill-shadow);
+  color: var(--fill-text);
+  font-size: 17px;
+  line-height: 1;
+}
+
+.send:hover:not(:disabled) {
+  color: var(--fill-text);
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+}
+
+.send:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: var(--inset);
+}
+
+.disclaimer {
+  flex-shrink: 0;
+  padding: 8px 10px 10px;
+  text-align: center;
+  font-size: 9px;
+  color: var(--muted);
+}
+
+/* 窄屏覆盖面板（方案 A）/ Narrow overlay (option A) */
+@media (max-width: 950px) {
+  .chat {
+    top: var(--header-height);
+    z-index: 25;
+    width: min(385px, 100%);
+    background: var(--panel);
+    box-shadow: -15px 0 50px #0005;
+  }
+
+  .head {
+    height: auto;
+    min-height: 56px;
+    padding: 10px 16px;
+  }
+}

@@ -43,6 +43,8 @@ export interface UiState {
   previousVisitAt: string | null
   /** 最近一次访问时间（持久化）。/ Most recent visit (persisted). */
   lastVisitAt: string | null
+  /** 本次会话是否已记录访问（不持久化）。/ Whether this session already recorded its visit (not persisted). */
+  visitRecorded: boolean
   seenClusters: SeenClusters
   activityDraft: EventFilterDraft
   submittedActivityQuery: EventQuery | null
@@ -52,7 +54,10 @@ export interface UiState {
   setChatOpen: (open: boolean) => void
   toggleChat: () => void
   setReadingContext: (context: ContextRef) => void
-  /** 每次打开应用调用一次：上次访问 → previousVisitAt，本次时间 → lastVisitAt。/ Call once per app load. */
+  /**
+   * 记录本次访问：上次访问 → previousVisitAt，本次时间 → lastVisitAt。同一会话内重复调用无效
+   * （React StrictMode 会重复执行 effect）。/ Record this visit; repeated calls in one session are no-ops.
+   */
   recordVisit: () => void
   markClusterSeen: (eventClusterId: string) => void
   updateActivityDraft: (changes: Partial<EventFilterDraft>) => void
@@ -85,6 +90,7 @@ export function createUiStore(options: UiStoreOptions = {}) {
         readingContext: DEFAULT_READING_CONTEXT,
         previousVisitAt: null,
         lastVisitAt: null,
+        visitRecorded: false,
         seenClusters: {},
         activityDraft: defaultFilters(now()),
         submittedActivityQuery: null,
@@ -95,7 +101,11 @@ export function createUiStore(options: UiStoreOptions = {}) {
         toggleChat: () => set((state) => ({ chatOpen: !state.chatOpen })),
         setReadingContext: (context) => set({ readingContext: context }),
         recordVisit: () =>
-          set((state) => ({ previousVisitAt: state.lastVisitAt, lastVisitAt: now().toISOString() })),
+          set((state) =>
+            state.visitRecorded
+              ? state
+              : { previousVisitAt: state.lastVisitAt, lastVisitAt: now().toISOString(), visitRecorded: true },
+          ),
         markClusterSeen: (eventClusterId) =>
           set((state) => ({
             seenClusters: { ...state.seenClusters, [eventClusterId]: now().toISOString() },

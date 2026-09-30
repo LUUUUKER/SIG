@@ -2,7 +2,7 @@
 
 > 维护规则：前端任何文件的新增、删除、改名，以及调用链、状态、已定规则的变化，都要**在同一次改动里**更新本文件。状态列必须如实标注：✅ 已实现 ／ 📝 计划中。
 >
-> 最近更新：2026-09-29 · 阶段 0 完成（F1、F2 通过）；阶段 1a（lib / services / state）完成：L1–L23、S1–S19 全部通过（S3 拆为 S3a 成功 / S3b 失败两个用例）。
+> 最近更新：2026-09-29 · 阶段 0 完成（F1、F2 通过）；阶段 1a 完成（L1–L23、S1–S19 通过）；阶段 1b 完成（样式、外壳、页眉、左栏、助手面板；H5、H7、C1–C9、C15、C16、F1、F2 通过），并修复首屏主题闪烁（L24、V13 通过）。
 
 ## 1. 概览
 
@@ -53,14 +53,14 @@ features/（页面与业务） → components/（通用界面） → state/（�
 frontend/
 ├─ FRONTEND.md               本文档
 ├─ index.html                HTML 外壳（lang=zh-CN，标题 SIG）
-├─ vite.config.ts            Vite 与 Vitest 配置；开发时 /api 代理到 127.0.0.1:8000
+├─ vite.config.ts            Vite 与 Vitest 配置；/api 代理到 127.0.0.1:8000；themeBootPlugin 把 bootTheme 内联进 <head>
 ├─ playwright.config.ts      端到端测试配置，自动启动开发服务器
 ├─ e2e/                      Playwright 测试
 ├─ public/favicon.svg        SIG 图标
 └─ src/
    ├─ main.tsx               入口
-   ├─ App.tsx                阶段 0 占位根组件（阶段 1 由 AppShell 取代）
-   ├─ test/setup.ts          Vitest 全局准备
+   ├─ test/setup.ts          Vitest 全局准备（默认窄屏 matchMedia、每个测试后重置 store）
+   ├─ test/testUtils.tsx     测试辅助：setViewportMatches、resetStores、renderApp
    ├─ app/                   组装层：布局、路由、全局 hook
    ├─ styles/                设计 token 与全局样式
    ├─ lib/                   纯函数
@@ -76,21 +76,21 @@ frontend/
 
 | 文件 | 状态 | 职责 |
 |---|---|---|
-| `main.tsx` | ✅（阶段 1 扩展） | 挂载根组件；阶段 1 加上 QueryClientProvider、RouterProvider 与全局样式 |
-| `App.tsx` | ✅ 临时 | 阶段 0 占位，显示 SIG；阶段 1 删除 |
-| `test/setup.ts` | ✅ | 注册 jest-dom 断言；每个测试后清理 |
-| `app/router.tsx` | 📝 | 路由：`/`、`/domain/:domain`、`/article/:id`、`/saved`、`/events`、404；内容类型用 `?type=` |
-| `app/AppShell.tsx` + `.module.css` | 📝 | 三栏布局：Header + SidebarNav + 中间内容区（独立滚动）+ ChatPanel；窄屏遮罩；Esc 关闭助手 |
-| `app/useTheme.ts` | 📝 | 按 `themeMode` 算出实际主题（自动模式用 `themeForTime`，每分钟重算），写入 `<html data-theme>` |
-| `app/useAutoRefresh.ts` | 📝 | 应用启动时调用一次：`needsRefresh(lastRunAt, now, 8h)` 为真则开始后台更新 |
-| `app/useVisitTracker.ts` | 📝 | 启动时把上次访问时间存为 `previousVisitAt`（「新」标记基准），再写入本次时间 |
+| `main.tsx` | ✅ | 引入 `tokens.css`、`base.css`，用 `react-router/dom` 的 `RouterProvider` 挂载路由；1c 加 QueryClientProvider |
+| `app/router.tsx` | ✅ | `appRoutes`（测试复用）与 `createAppRouter()`；路由 `/`、`/domain/:domain`、`/article/:articleId`、`/saved`、`/events`、`*`，全部挂在 AppShell 下；内容类型用 `?type=` |
+| `app/PlaceholderPage.tsx` | ✅ 临时（1c 删除） | `PlaceholderPage`、`DomainPlaceholder`：1b 阶段各路由的占位页，明确写"将在 1c 实现" |
+| `app/AppShell.tsx` + `.module.css` | ✅ | 页眉 + 左栏 + `<main id="main-content">`（路由出口）+ ChatPanel + ToastHost。桌面：页面不滚动，助手打开时 workspace 右侧让出 `--chat-width`；窄屏：覆盖面板 + 遮罩。屏宽跨过 951px 时设置默认显隐；Esc（窄屏打开时或焦点在面板内）关闭；关闭后焦点回到页眉开关。1b 的更新状态为静态值，点击刷新提示"将在 1c 接入" |
+| `app/useMediaQuery.ts` | ✅ | `useMediaQuery(query)`（useSyncExternalStore 订阅 matchMedia）、`DESKTOP_QUERY = (min-width: 951px)` |
+| `app/useTheme.ts` | ✅ | `resolveTheme(mode, now)`、`useMinuteClock()`（每分钟变化一次的分钟序号）、`useTheme()`：写入 `<html data-theme>` |
+| `app/useVisitTracker.ts` | ✅ | 启动时调用 `uiStore.recordVisit()`；该动作每个会话只生效一次，StrictMode 重复执行也安全 |
+| `app/useAutoRefresh.ts` | 📝（1c） | 应用启动时调用一次：`needsRefresh(lastRunAt, now, 8h)` 为真则开始后台更新 |
 
 ### 4.2 样式 `styles/`
 
 | 文件 | 状态 | 职责 |
 |---|---|---|
-| `tokens.css` | 📝 | `[data-theme="light"]` / `[data-theme="dark"]` 两套颜色与材质变量（取原型最终生效的早报/晚报值）；页眉高度、左栏宽、助手宽等布局变量，按断点分档 |
-| `base.css` | 📝 | reset、背景细网格、焦点样式、减少动态效果、滚动条 |
+| `tokens.css` | ✅ | `:root` 为浅色（原早报）、`:root[data-theme='dark']` 为深色（原晚报）的颜色与材质变量，含 `--orb` 与按钮填充 `--fill-*`；布局变量 `--header-height`（81，≤600 为 110）、`--sidebar-width`（190 / 951–1180 为 150 / ≥1550 为 210 / ≤950 为 135）、`--chat-width`（345 / 300 / 385）、`--main-padding-x` |
+| `base.css` | ✅ | reset、`[hidden]` 强制隐藏、按钮/链接默认、焦点环、`.page-material` 背景细网格、`.visually-hidden`、细滚动条、减少动态效果；桌面时 html/body/#root 高 100% 且不滚动 |
 
 ### 4.3 纯函数 `lib/`
 
@@ -107,6 +107,7 @@ frontend/
 | `headlines.ts` | `pickHeadlines(items, now, domains = DOMAINS)` | ✅ | 只看 24h 内的新闻；每领域最高分（同分取更新）；缺失领域跳过 |
 | `eventFilters.ts` | `EVENT_CATEGORIES`、`defaultFilters(now)`、`validateFilters(draft)`、`toQuery(draft)` | ✅ | 活动默认条件（LA、60、今天到下月同日，月末截断）、校验、转查询。原计划放 `features/events/`，因 `state/uiStore` 需要其类型而移到 `lib/`（分层规则禁止 state 引用 features） |
 | `composerHeight.ts` | `composerHeight(scrollHeight)` | ✅ | 输入框高度限制 26–144px，超出时内部滚动。同理从 `features/chat/` 移到 `lib/` |
+| `themeBoot.ts` | `bootTheme(storage, now, root)` | ✅ | 首屏主题：React 加载前读取 `sig-ui` 中的 `themeMode`（读取失败按自动），写入 `<html data-theme>`，消除深色时段首屏闪浅色。由 `vite.config.ts` 的 `themeBootPlugin` 以源码内联进 `<head>`，因此函数必须完全自包含；与 `resolveTheme` 的一致性由 L24 保证 |
 
 ### 4.4 数据层 `services/`
 
@@ -126,7 +127,7 @@ frontend/
 | 文件 | 状态 | 内容 |
 |---|---|---|
 | `storage.ts` | ✅ | `createSafeStorage(getStorage)`（读写全部 try/catch，失败时等同无存储）、`browserStorage`、`createMemoryStorage()` |
-| `uiStore.ts` | ✅ | `themeMode`、`chatOpen`、`readingContext`（默认"为你精选 · 最近 24 小时"）、`previousVisitAt`、`lastVisitAt`、`seenClusters`、`activityDraft`、`submittedActivityQuery`、`activityCategory`；动作 `setThemeMode`、`setChatOpen`、`toggleChat`、`setReadingContext`、`recordVisit`、`markClusterSeen`、`updateActivityDraft`、`submitActivityQuery`、`setActivityCategory`。持久化键 `sig-ui`，只存 `themeMode`、`lastVisitAt`、`seenClusters` |
+| `uiStore.ts` | ✅ | `themeMode`、`chatOpen`、`readingContext`（默认"为你精选 · 最近 24 小时"）、`previousVisitAt`、`lastVisitAt`、`visitRecorded`（1b 新增：本会话是否已记录访问，不持久化，使 `recordVisit` 只生效一次）、`seenClusters`、`activityDraft`、`submittedActivityQuery`、`activityCategory`；动作 `setThemeMode`、`setChatOpen`、`toggleChat`、`setReadingContext`、`recordVisit`、`markClusterSeen`、`updateActivityDraft`、`submitActivityQuery`、`setActivityCategory`。持久化键 `sig-ui`，只存 `themeMode`、`lastVisitAt`、`seenClusters` |
 | `chatSessionStore.ts` | ✅ | `sessions`（LRU 上限 10）、`activeSessionId`（null = 新对话空白页）、`draft`（全局一份，不持久化）；每会话 `status`（idle / replying / error）、`errorMessage`、`pendingRequest`。动作 `setDraft`、`sendMessage(text, contextRef)`、`retry(sessionId)`、`startNewSession`、`switchSession`、`deleteSession`。工具 `makeSessionTitle`、`evictLeastRecentlyUsed`、`selectActiveSession`、`selectSessionsByRecent`。持久化键 `sig-chat-sessions`；刷新时仍在回复中的会话变为"回复被中断，可重试" |
 | `toastStore.ts` | ✅ | 同一时间一条提示（新提示替换旧提示并重置计时），6.5 秒自动消失；`showToast(message, undo?)`、`dismissToast`、`undoToast` |
 
@@ -134,14 +135,15 @@ frontend/
 
 | 文件 | 状态 | 职责 |
 |---|---|---|
-| `Header/Header.tsx` | 📝 | SIG（回首页并重置为新闻）｜每日鼓励句 … RefreshStatus、ThemeToggle、头像、ChatToggle |
-| `Header/ThemeToggle.tsx` | 📝 | 浅 / 深 / 自动，内凹三段切换 |
-| `Header/RefreshStatus.tsx` | 📝 | "更新于 X 前" / "更新中…" / "更新失败 · 重试"，刷新图标按钮 |
-| `Header/ChatToggle.tsx` | 📝 | 唯一助手开关；`aria-expanded` 与实际可见性一致 |
-| `Sidebar/SidebarNav.tsx` | 📝 | MY EDITION + DOMAINS（上方分割线）；窄屏横排，个人入口在前、竖线后接领域 |
-| `StatusView.tsx` | 📝 | 通用加载 / 空 / 失败 + 重试 |
-| `ToastHost.tsx` | 📝 | 显示提示条，可带"撤销" |
-| `icons/` | 📝 | 放大镜、侧栏、刷新三个线性 SVG |
+| `Header/Header.tsx` + `Header.module.css` | ✅ | `Header({ refresh })`：SIG 链接（名称"SIG 首页"，指向 `/`，因此类型回到新闻）｜每日鼓励句 … RefreshStatus、ThemeToggle、头像（LK）、ChatToggle。≤950 页眉 sticky、隐藏更新文字只留图标；≤600 两行布局、隐藏头像 |
+| `Header/ThemeToggle.tsx` | ✅ | 浅 / 深 / 自动，内凹三段切换，`aria-pressed` 表示当前项 |
+| `Header/RefreshStatus.tsx` | ✅ | 纯展示：`status`（idle / running / failed）、`lastRunAt`、`now`、`onRefresh`；idle"更新于 X 前"或"尚未更新"，running"更新中…"且按钮禁用、图标旋转，failed"更新失败 · 重试" |
+| `Header/ChatToggle.tsx` | ✅ | 唯一助手开关（`id="chat-toggle"`，`aria-controls="chat"`，`aria-expanded` 与面板一致，名称在"隐藏/显示 sig 助手"间切换）；导出 `CHAT_TOGGLE_ID`、`CHAT_PANEL_ID` |
+| `Sidebar/SidebarNav.tsx` + `.module.css` | ✅ | MY EDITION + DOMAINS 两个 `<nav>`（DOMAINS 上方分割线）；NavLink 自动加 `aria-current="page"`；领域链接保留当前 `?type=`。≤600 横排可滑动，个人入口在前、竖线后接领域 |
+| `Sidebar/navLinks.ts` | ✅ | `PERSONAL_LINKS`、`domainPath(domain, contentType)`（从组件文件拆出，保证热更新可用） |
+| `StatusView.tsx` + `.module.css` | ✅ | `StatusView({ state, message, onRetry })`：loading / empty 用 `role="status"`，error 用 `role="alert"` 并带重试 |
+| `ToastHost.tsx` + `.module.css` | ✅ | 始终存在的 `role="status"` 区域，显示当前提示与"撤销" |
+| `icons/Icons.tsx` | ✅ | `PanelIcon`、`SearchIcon`、`RefreshIcon`、`HistoryIcon`、`PlusIcon`、`CloseIcon`（线性 SVG，对读屏隐藏） |
 
 ### 4.7 页面与业务 `features/`
 
@@ -161,11 +163,12 @@ frontend/
 | `events/EventSearchForm.tsx` | 📝 | 地点、范围、开始、结束、预算 + 放大镜提交 |
 | `events/EventCategoryTabs.tsx` | 📝 | 全部 / 演出 / 比赛 / 社交活动 / 展览与放映 |
 | `events/EventResults.tsx` | 📝 | 尚未接入 / 加载 / 无结果 / 失败 / 结果 |
-| `chat/ChatPanel.tsx` | 📝 | 标题栏（头像、sig · 阅读伙伴、历史、新对话）、上下文、消息、快捷问题、输入框、演示说明 |
-| `chat/ChatHistory.tsx` | 📝 | 面板内历史列表：标题、关联文章、"X 前"；点击切换，单条删除；空状态 |
-| `chat/ContextSummary.tsx` | 📝 | 当前阅读上下文，默认折叠 |
-| `chat/MessageList.tsx` | 📝 | 每条消息显示关联上下文；回复中 / 失败 · 重试 |
-| `chat/ChatComposer.tsx` | 📝 | Enter 发送、Shift+Enter 换行、输入法组合中不发、空白不发 |
+| `chat/ChatPanel.tsx` | ✅ | `ChatPanel({ hidden })`：标题栏（S 标记、sig · 阅读伙伴、历史、新对话）、ContextSummary、主体三选一（历史 / 当前会话 MessageList / 欢迎页 + 3 个快捷问题）、ChatComposer、演示说明。发送时先清空草稿再以当前阅读上下文发送；回复中禁用输入。历史的"X 前"以打开历史的时刻为准 |
+| `chat/ChatHistory.tsx` | ✅ | 面板内历史列表：标题、首条消息的关联上下文、"X 前"；当前会话 `aria-current`；点击切换，单条删除；空状态"还没有历史对话。" |
+| `chat/ContextSummary.tsx` | ✅ | `<details>` 默认折叠为"当前 · 标题"，展开显示完整标题与说明 |
+| `chat/MessageList.tsx` | ✅ | 用户消息显示"关联：…"；回复中 `role="status"`；失败 `role="alert"` + 重试；变化时滚到底部 |
+| `chat/ChatComposer.tsx` | ✅ | 受控组件（`value`、`onChange`、`onSubmit`、`disabled`），`id="chat-input"`；Enter 发送、Shift+Enter 换行、输入法组合中（`isComposing` 或 keyCode 229）不发、空白或禁用不发；每次变化用 `composerHeight` 重算高度 |
+| `chat/Chat.module.css` | ✅ | 助手面板全部样式；桌面固定右侧、标题栏高 `--header-height` 与页眉底线对齐；≤950 从页眉下方开始的覆盖面板（方案 A） |
 
 ## 5. 调用链
 
@@ -191,8 +194,8 @@ frontend/
 
 | 编号 | 文件 | 场景 | 期望 | 状态 |
 |---|---|---|---|---|
-| F1 | `src/App.test.tsx` | 在 jsdom 中渲染根组件 | 不报错，有标题 SIG | ✅ 2026-09-29 |
-| F2 | `e2e/smoke.spec.ts` | Chromium 打开开发服务器首页 | 页面标题含 SIG，品牌可见 | ✅ 2026-09-29 |
+| F1 | `src/app/AppShell.test.tsx`（1b 由 `App.test.tsx` 迁移） | 在 `/` 渲染应用外壳；桌面默认显示助手、窄屏默认隐藏 | 有品牌链接、导航与内容区；显隐正确 | ✅ 2026-09-29 |
+| F2 | `e2e/smoke.spec.ts` | Chromium 打开开发服务器首页 | 页面标题含 SIG，品牌链接"SIG 首页"可见（1b 起品牌不再是标题） | ✅ 2026-09-29 |
 
 ### 阶段 1 测试清单（2026-09-29 确认）
 
@@ -225,6 +228,7 @@ frontend/
 | L21 | `validateFilters`：地点空、范围 0/负/小数/>500、预算负、结束早于开始 → 各自报错；预算空、0、同一天 → 通过 | ✅ 2026-09-29 |
 | L22 | `toQuery`：预算空 → null；0 → 0；数字字符串转数字 | ✅ 2026-09-29 |
 | L23 | `composerHeight`：20→26；100→100；144→144 不滚动；200→144 且滚动 | ✅ 2026-09-29 |
+| L24 | `bootTheme`：三种模式 × 边界与夏令时时间点均与 `resolveTheme` 一致并写入 `data-theme`；存储缺失 / 损坏 / 抛错按自动；源码自包含可内联 | ✅ 2026-09-29 |
 
 **数据层与状态 S（1a）**
 
@@ -258,9 +262,9 @@ frontend/
 | H2 | `useCarousel`：悬停、焦点在内、标签页隐藏、减少动态效果时不前进 | ⬜ |
 | H3 | `useCarousel`：手动切换后暂停；播放恢复 | ⬜ |
 | H4 | `useCarousel`：0 条不启动计时器；1 条不前进 | ⬜ |
-| H5 | `useTheme`：自动模式 05:59 深色，走到 06:00 后一分钟内变浅色；手动优先；写入 `data-theme` | ⬜ |
+| H5 | `useTheme`：自动模式 05:59 深色，走到 06:00 后一分钟内变浅色；手动优先；写入 `data-theme` | ✅ 2026-09-29 |
 | H6 | `useAutoRefresh`：9h 前 → 只发起一次（StrictMode 下也不重复）；1h 前 → 不发起 | ⬜ |
-| H7 | `useVisitTracker`：存量访问时间成为上次访问时间，再写入本次；首次为空 | ⬜ |
+| H7 | `useVisitTracker`：存量访问时间成为上次访问时间，再写入本次；首次为空 | ✅ 2026-09-29 |
 | H8 | `useScrollMemory`：离开记录、返回恢复 | ⬜ |
 | H9 | `useToggleSaved`：立即显示已收藏；失败回滚并提示 | ⬜ |
 
@@ -268,22 +272,22 @@ frontend/
 
 | 编号 | 场景 → 期望 | 状态 |
 |---|---|---|
-| C1 | Header：品牌、鼓励句；无"每日一句"；开关 `aria-expanded` 与面板一致 | ⬜ |
-| C2 | 品牌：在 `/domain/AI?type=精选文章` 点击 → `/`，类型为新闻 | ⬜ |
-| C3 | ThemeToggle：三选项 `aria-pressed` 正确；点"深"切深色 | ⬜ |
-| C4 | RefreshStatus：空闲 / 更新中（按钮禁用）/ 失败可重试 | ⬜ |
-| C5 | SidebarNav：MY EDITION、DOMAINS、七领域；`aria-current` 高亮；无"你的关注" | ⬜ |
-| C6 | StatusView：加载 / 空 / 失败，重试调用回调 | ⬜ |
-| C7 | ChatComposer：Enter 发送；Shift+Enter 换行；输入法组合中不发；空白禁发；发送后清空并缩回 | ⬜ |
-| C8 | MessageList：用户消息显示"关联：…"；回复中提示；失败有重试 | ⬜ |
-| C9 | ContextSummary：默认折叠，展开显示完整标题 | ⬜ |
+| C1 | Header：品牌、鼓励句；无"每日一句"；开关 `aria-expanded` 与面板一致 | ✅ 2026-09-29 |
+| C2 | 品牌：在 `/domain/AI?type=精选文章` 点击 → `/`，类型为新闻 | ✅ 2026-09-29 |
+| C3 | ThemeToggle：三选项 `aria-pressed` 正确；点"深"切深色 | ✅ 2026-09-29 |
+| C4 | RefreshStatus：空闲 / 更新中（按钮禁用）/ 失败可重试 | ✅ 2026-09-29 |
+| C5 | SidebarNav：MY EDITION、DOMAINS、七领域；`aria-current` 高亮；无"你的关注" | ✅ 2026-09-29 |
+| C6 | StatusView：加载 / 空 / 失败，重试调用回调 | ✅ 2026-09-29 |
+| C7 | ChatComposer：Enter 发送；Shift+Enter 换行；输入法组合中不发；空白禁发；发送后清空并缩回 | ✅ 2026-09-29 |
+| C8 | MessageList：用户消息显示"关联：…"；回复中提示；失败有重试 | ✅ 2026-09-29 |
+| C9 | ContextSummary：默认折叠，展开显示完整标题 | ✅ 2026-09-29 |
 | C10 | ArticleCard：字段齐全；外链 `target=_blank` + `rel=noopener noreferrer`；新/更新标记；收藏无障碍名称随状态变 | ⬜ |
 | C11 | HeadlineCarousel：条数、标签、"01 / 0N"；非当前幻灯片不可聚焦 | ⬜ |
 | C12 | EventSearchForm：默认值；日期反向报错不提交；改正后提交；放大镜名称"搜索活动" | ⬜ |
 | C13 | EventResults：not_connected 显示说明，无伪造活动 | ⬜ |
 | C14 | NewContentBanner：显示 N；点击前列表不变，点击后刷新 | ⬜ |
-| C15 | ChatHistory：按 `lastActiveAt` 倒序列出标题、关联文章、"X 前"；点击切换；单条删除；空状态 | ⬜ |
-| C16 | ChatPanel 标题栏：有"历史""新对话"，无"重置"，无显隐开关 | ⬜ |
+| C15 | ChatHistory：按 `lastActiveAt` 倒序列出标题、关联文章、"X 前"；点击切换；单条删除；空状态 | ✅ 2026-09-29 |
+| C16 | ChatPanel 标题栏：有"历史""新对话"，无"重置"，无显隐开关 | ✅ 2026-09-29 |
 
 **页面集成 P（1c）**
 
@@ -314,6 +318,7 @@ frontend/
 | V10 | 各尺寸 × 浅/深，新版与原型截图并存，供人工对比（不判定） | ⬜ |
 | V11 | 各页面无控制台错误 | ⬜ |
 | V12 | 刷新页面后对话历史仍在，可从历史切回 | ⬜ |
+| V13 | 屏蔽应用脚本后，仅靠 `<head>` 内联脚本即设置正确主题（夜间自动 → 深；已存浅色 → 浅）（`e2e/themeBoot.spec.ts`，1b 修复首屏闪烁时提前完成） | ✅ 2026-09-29 |
 
 ## 7. 常用命令
 

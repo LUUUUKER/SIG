@@ -1,0 +1,102 @@
+/*
+ * 概览 / Overview
+ * 设计 token：颜色、材质、字体、圆角与布局尺寸。数值取自原型（sig-handoff/prototype/index.html）
+ * 最终生效的 cosmos 早报 / 晚报样式。浅色 = 原早报，深色 = 原晚报；由 <html data-theme> 切换。
+ * Design tokens for colour, material, type, radius and layout, taken from the prototype's final
+ * cosmos morning/evening styles. Light = former morning, dark = former evening; switched by <html data-theme>.
+ *
+ * 包含 / Contents
+ * - :root —— 字体、圆角、布局变量（含断点）与浅色主题（默认）。/ fonts, radius, layout vars, light theme.
+ * - [data-theme="dark"] —— 深色主题。/ dark theme.
+ * - 按钮填充色（--fill-*）早晚各一套。/ filled-button colours per theme.
+ */
+
+:root {
+  /* 字体与形状 / Type & shape */
+  --display: 'Avenir Next', 'PingFang SC', sans-serif;
+  --body: 'Avenir Next', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --radius: 12px;
+
+  /* 布局 / Layout (desktop base) */
+  --header-height: 81px;
+  --sidebar-width: 190px;
+  --chat-width: 345px;
+  --main-padding-x: 36px;
+
+  /* 浅色主题 / Light theme (former morning edition) */
+  --bg: #e5edf3;
+  --panel: #e9f0f5;
+  --paper: #f0f5f9;
+  --text: #1c3448;
+  --muted: #526d81;
+  --line: #c5d4df;
+  --accent: #245c7a;
+  --soft: #dce8f1;
+  --hero: linear-gradient(132deg, #f7fbff 0%, #e9f1f8 55%, #dae6ef 100%);
+  --highlight: rgba(255, 255, 255, 0.98);
+  --shade: rgba(113, 139, 160, 0.3);
+  --raised: linear-gradient(140deg, #f3f8fc, #e4edf4);
+  --lift: 7px 9px 22px #9cb0c24a, -5px -5px 16px #ffffffcf;
+  --inset: inset 3px 3px 8px #a4bacb66, inset -2px -2px 5px #ffffffed;
+  --orb: radial-gradient(circle at 29% 23%, #fff, #d5e6f3 27%, #86a7bf 61%, #54728b 92%);
+  --fill-bg: linear-gradient(145deg, #356e8e, #215370);
+  --fill-text: #f5faff;
+  --fill-border: #305e78;
+  --fill-shadow: 4px 5px 10px #9ab0c066, inset 1px 1px 0 #71a5c0, inset -1px -1px 0 #173d55;
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  /* 深色主题 / Dark theme (former evening edition) */
+  --bg: #0c141e;
+  --panel: #111e2b;
+  --paper: #101b28;
+  --text: #e5edf4;
+  --muted: #99adbf;
+  --line: #293d50;
+  --accent: #a4dcef;
+  --soft: #182b3c;
+  --hero: linear-gradient(132deg, #1c3448 0%, #142534 55%, #101d2c 100%);
+  --highlight: rgba(178, 220, 255, 0.16);
+  --shade: rgba(0, 0, 0, 0.52);
+  --raised: linear-gradient(140deg, #192a3a, #111e2d);
+  --lift: 7px 9px 22px #050b1399, -3px -3px 12px #263b482a;
+  --inset: inset 3px 3px 8px #050c1599, inset -1px -1px 3px #4c6a7c33;
+  --orb: radial-gradient(circle at 29% 23%, #c5e7f4, #5c8ca8 28%, #233f56 64%, #122433 92%);
+  --fill-bg: linear-gradient(145deg, #c6eaf6, #8dc6dd);
+  --fill-text: #15364b;
+  --fill-border: #8eb8ce77;
+  --fill-shadow: 4px 5px 10px var(--shade), inset 1px 1px 0 #ffffffa0, inset -1px -1px 1px #4d89a077;
+  color-scheme: dark;
+}
+
+/* 断点 / Breakpoints: 951–1180 窄桌面，≥1550 宽屏，≤600 手机 */
+@media (min-width: 951px) and (max-width: 1180px) {
+  :root {
+    --sidebar-width: 150px;
+    --chat-width: 300px;
+    --main-padding-x: 25px;
+  }
+}
+
+@media (min-width: 1550px) {
+  :root {
+    --sidebar-width: 210px;
+    --chat-width: 385px;
+    --main-padding-x: 55px;
+  }
+}
+
+@media (max-width: 950px) {
+  :root {
+    --sidebar-width: 135px;
+    --main-padding-x: 25px;
+  }
+}
+
+@media (max-width: 600px) {
+  :root {
+    --header-height: 110px;
+    --main-padding-x: 20px;
+  }
+}

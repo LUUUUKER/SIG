@@ -1,0 +1,226 @@
+/*
+ * 概览 / Overview
+ * 页眉及其控件样式。数值取自原型 .topbar / .brand / .daily-quote / .edition / .toggle / .avatar / .panel-toggle
+ * 的最终生效规则；新增的更新状态沿用弱化小字。
+ * Header and control styles from the prototype's final rules; the new refresh status uses muted small text.
+ */
+
+.topbar {
+  position: relative;
+  z-index: 30;
+  height: var(--header-height);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--panel), var(--bg));
+  box-shadow:
+    inset 0 1px 0 var(--highlight),
+    0 4px 12px color-mix(in srgb, var(--shade) 45%, transparent);
+}
+
+.brand {
+  font: 600 25px/1 var(--display);
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+  text-shadow: 0 1px 0 var(--highlight);
+}
+
+.dailyQuote {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border-left: 1px solid var(--line);
+  padding: 4px 0 4px 24px;
+}
+
+.dailyQuote p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  letter-spacing: 0.035em;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  justify-self: end;
+}
+
+/* 更新状态 / Refresh status */
+.refresh {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.refreshFailed {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.iconButton {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--muted);
+}
+
+.iconButton:hover {
+  background: var(--soft);
+}
+
+.iconButton[data-spinning='true'] svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 内凹三段切换 / Recessed segmented toggle */
+.toggle {
+  display: flex;
+  flex-shrink: 0;
+  padding: 5px;
+  border-radius: 10px;
+  background: var(--bg);
+  box-shadow: var(--inset);
+}
+
+.toggleButton {
+  min-height: 32px;
+  padding: 6px 17px;
+  border-radius: 7px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.toggleButton[aria-pressed='true'] {
+  background: var(--raised);
+  box-shadow:
+    3px 3px 7px var(--shade),
+    inset 1px 1px 0 var(--highlight);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.avatar {
+  width: 33px;
+  height: 33px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--raised);
+  box-shadow:
+    var(--lift),
+    inset 0 1px 0 var(--highlight);
+  color: var(--accent);
+  font-size: 11px;
+}
+
+.panelToggle {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--raised);
+  color: var(--accent);
+}
+
+@media (max-width: 1180px) {
+  .topbar {
+    gap: 18px;
+    padding: 0 24px;
+  }
+
+  .dailyQuote p {
+    font-size: 12px;
+  }
+
+  .controls {
+    gap: 12px;
+  }
+
+  .toggleButton {
+    padding: 6px 12px;
+  }
+}
+
+@media (max-width: 950px) {
+  .topbar {
+    position: sticky;
+    top: 0;
+    gap: 15px;
+  }
+
+  .dailyQuote p {
+    font-size: 11px;
+  }
+
+  .refreshText {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .topbar {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: 55px 40px;
+    gap: 0 13px;
+    padding: 5px 20px 10px;
+  }
+
+  .brand {
+    grid-column: 1;
+    grid-row: 1;
+    font-size: 19px;
+    letter-spacing: 0.1em;
+  }
+
+  .dailyQuote {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    min-height: 29px;
+    padding: 0 0 0 13px;
+  }
+
+  .dailyQuote p {
+    font-size: 10px;
+    letter-spacing: 0;
+  }
+
+  .controls {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    gap: 10px;
+  }
+
+  .avatar {
+    display: none;
+  }
+
+  .toggleButton {
+    min-height: 29px;
+    padding: 4px 11px;
+    font-size: 11px;
+  }
+}

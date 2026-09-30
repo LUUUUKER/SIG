@@ -1,14 +1,19 @@
 /**
  * 概览 / Overview
- * 前端入口：把根组件挂载到 index.html 的 #root。阶段 1 会在这里加上 QueryClient 与 Router。
- * Frontend entry: mount the root component into #root. Phase 1 adds QueryClient and Router here.
+ * 前端入口：加载全局样式，挂载路由。1c 会在这里加上 TanStack Query 的 QueryClientProvider。
+ * Frontend entry: load global styles and mount the router. 1c adds QueryClientProvider here.
  */
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import App from './App.tsx'
+import { RouterProvider } from 'react-router/dom'
+import { createAppRouter } from './app/router'
+import './styles/tokens.css'
+import './styles/base.css'
+
+const router = createAppRouter()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <RouterProvider router={router} />
   </StrictMode>,
 )

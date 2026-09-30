@@ -1,0 +1,134 @@
+/*
+ * 概览 / Overview
+ * 左栏样式，取自原型 .sidebar / .nav-label / .navitem / .domain-navigation / .side-bottom。
+ * 桌面：竖排、自身滚动；≤600px：横排可左右滑动，个人入口与领域之间一条竖线（修复原型隐藏个人入口的问题）。
+ * Sidebar styles from the prototype. Desktop: vertical and self-scrolling. ≤600px: a horizontal
+ * scroller with a divider between personal entries and domains (fixing the prototype hiding them).
+ */
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  min-height: 0;
+  padding: 34px 20px 24px 25px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--panel) 60%, transparent));
+  box-shadow: inset -1px 0 0 var(--highlight);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.label {
+  margin: 0 12px 13px;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+}
+
+.items {
+  display: grid;
+  gap: 5px;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  text-align: left;
+}
+
+.mark {
+  width: 18px;
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.active {
+  background: var(--raised);
+  box-shadow:
+    4px 5px 10px var(--shade),
+    inset 1px 1px 0 var(--highlight);
+  color: var(--accent);
+}
+
+.active .mark {
+  color: var(--accent);
+}
+
+.domains {
+  border-top: 1px solid var(--line);
+  padding-top: 22px;
+}
+
+.footnote {
+  margin-top: auto;
+  padding: 22px 10px 5px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.footnote strong {
+  display: block;
+  margin: 6px 0;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text);
+}
+
+@media (min-width: 951px) and (max-width: 1180px) {
+  .sidebar {
+    padding-left: 15px;
+    padding-right: 13px;
+  }
+}
+
+@media (max-width: 950px) {
+  .sidebar {
+    border-right: 1px solid var(--line);
+    overflow: visible;
+  }
+}
+
+@media (max-width: 600px) {
+  .sidebar {
+    flex-direction: row;
+    align-items: center;
+    gap: 0;
+    padding: 12px 17px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    background: none;
+    box-shadow: none;
+    overflow-x: auto;
+  }
+
+  .label,
+  .mark,
+  .footnote {
+    display: none;
+  }
+
+  .items {
+    display: flex;
+    gap: 4px;
+  }
+
+  .navItem {
+    padding: 6px 10px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .domains {
+    border-top: 0;
+    padding-top: 0;
+    margin-left: 8px;
+    padding-left: 8px;
+    border-left: 1px solid var(--line);
+  }
+}
