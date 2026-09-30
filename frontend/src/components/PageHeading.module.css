@@ -1,0 +1,11 @@
+/* 概览 / Overview: 紧凑页面标题，取自原型 .compact-heading。/ Compact page heading from the prototype. */
+
+.heading {
+  margin: 0 0 20px;
+}
+
+.heading h1 {
+  margin: 0;
+  font: 500 24px/1.5 var(--display);
+  color: var(--text);
+}

@@ -7,30 +7,27 @@
  * focus to the header toggle after closing.
  *
  * 包含 / Contents
- * - MAIN_CONTENT_ID：中间内容区 id。/ id of the centre column.
- * - PLACEHOLDER_REFRESH：1b 阶段的静态更新状态（1c 由 useAutoRefresh 取代）。/ static refresh state for 1b.
  * - AppShell()。
  */
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect } from 'react'
 import { Outlet } from 'react-router'
 import { CHAT_PANEL_ID, CHAT_TOGGLE_ID } from '../components/Header/ChatToggle'
 import { Header } from '../components/Header/Header'
 import { SidebarNav } from '../components/Sidebar/SidebarNav'
 import { ToastHost } from '../components/ToastHost'
 import { ChatPanel } from '../features/chat/ChatPanel'
-import { useToastStore } from '../state/toastStore'
 import { useUiStore } from '../state/uiStore'
+import { MAIN_CONTENT_ID } from '../lib/layoutIds'
 import styles from './AppShell.module.css'
+import { useAutoRefresh } from './useAutoRefresh'
 import { DESKTOP_QUERY, useMediaQuery } from './useMediaQuery'
 import { useTheme } from './useTheme'
 import { useVisitTracker } from './useVisitTracker'
 
-export const MAIN_CONTENT_ID = 'main-content'
-
 /**
  * 应用外壳 / App shell.
  * 步骤 / Steps
- * 1. 主题与访问记录。/ Theme and visit tracking.
+ * 1. 主题、访问记录与自动更新（结果交给页眉的更新状态）。/ Theme, visit tracking and auto-refresh.
  * 2. 屏宽跨过 951px 时设置助手默认显隐：桌面显示，窄屏隐藏。/ Default visibility per viewport.
  * 3. Esc：窄屏面板打开时，或焦点在面板内时，关闭面板。/ Esc closes on narrow screens or from inside.
  * 4. 关闭时把焦点送回页眉开关。/ Return focus to the toggle on close.
@@ -39,12 +36,11 @@ export const MAIN_CONTENT_ID = 'main-content'
 export function AppShell() {
   useTheme() // 步骤 1 / Step 1
   useVisitTracker()
+  const refreshStatus = useAutoRefresh()
 
   const isDesktop = useMediaQuery(DESKTOP_QUERY)
   const chatOpen = useUiStore((state) => state.chatOpen)
   const setChatOpen = useUiStore((state) => state.setChatOpen)
-  const showToast = useToastStore((state) => state.showToast)
-  const [now] = useState(() => new Date())
 
   useEffect(() => {
     setChatOpen(isDesktop) // 步骤 2 / Step 2
@@ -69,14 +65,7 @@ export function AppShell() {
     <div className={styles.shell} data-chat-open={chatOpen}>
       <div className="page-material" aria-hidden="true" />
       <div className={styles.workspace}>
-        <Header
-          refresh={{
-            status: 'idle',
-            lastRunAt: null,
-            now,
-            onRefresh: () => showToast('更新功能将在 1c 接入演示数据'),
-          }}
-        />
+        <Header refresh={refreshStatus} />
         <div className={styles.layout}>
           <SidebarNav />
           <main id={MAIN_CONTENT_ID} className={styles.main}>

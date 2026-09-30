@@ -1,0 +1,483 @@
+/*
+ * 概览 / Overview
+ * 信息流样式：头版轮播、内容类型切换、文章卡片、新内容提示、活动入口。数值取自原型
+ * .headlines / .hero / .hero-art / .headline-controls / .subtabs / .story / .activity 的最终生效规则。
+ * Feed styles (carousel, type tabs, article cards, new-content banner, activity teaser) from the
+ * prototype's final rules.
+ */
+
+/* 共享：元信息行与标签 / Shared meta row and tags */
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 13px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.tag {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.badge {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.badge[data-badge='new'] {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.badge[data-badge='update'] {
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+.demo {
+  opacity: 0.8;
+}
+
+/* 新内容提示 / New-content banner */
+.banner {
+  width: 100%;
+  margin: 0 0 18px;
+  padding: 11px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--raised);
+  box-shadow:
+    3px 4px 8px var(--shade),
+    inset 1px 1px 0 var(--highlight);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 头版轮播 / Headline carousel */
+.headlines {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--raised);
+  box-shadow:
+    var(--lift),
+    inset 1px 1px 0 var(--highlight);
+}
+
+.track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+
+.track::-webkit-scrollbar {
+  display: none;
+}
+
+.slide {
+  position: relative;
+  flex: 0 0 100%;
+  min-height: 330px;
+  padding: 28px 29px 25px;
+  overflow: hidden;
+  isolation: isolate;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  background: var(--hero);
+}
+
+.slide::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border: 1px solid color-mix(in srgb, var(--highlight) 42%, transparent);
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+.heroCopy {
+  position: relative;
+  z-index: 2;
+  max-width: 77%;
+}
+
+.heroCopy h2 {
+  margin: 22px 0 13px;
+  font: 500 29px/1.45 var(--display);
+  letter-spacing: -0.03em;
+}
+
+.heroCopy p {
+  min-height: 75px;
+  max-width: 440px;
+  margin: 0 0 22px;
+  font-size: 13px;
+  line-height: 1.95;
+  color: var(--muted);
+}
+
+.heroActions {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  font-size: 11px;
+}
+
+.filled {
+  padding: 9px 16px;
+  border: 1px solid var(--fill-border);
+  border-radius: 8px;
+  background: var(--fill-bg);
+  box-shadow: var(--fill-shadow);
+  color: var(--fill-text);
+}
+
+.filled:hover {
+  color: var(--fill-text);
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+}
+
+.heroArt {
+  position: absolute;
+  top: 5px;
+  right: -92px;
+  z-index: 0;
+  width: 330px;
+  height: 330px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  opacity: 0.7;
+  transform: rotate(-25deg);
+  box-shadow:
+    inset 2px 2px 5px var(--shade),
+    inset -1px -1px 2px var(--highlight),
+    1px 1px 0 var(--highlight);
+}
+
+.heroArt::before,
+.heroArt::after {
+  content: '';
+  position: absolute;
+  inset: 42px;
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, transparent);
+  border-radius: 50%;
+  transform: rotate(60deg) scaleX(0.5);
+}
+
+.heroArt::after {
+  inset: 80px;
+  transform: none;
+  background: var(--orb);
+  box-shadow:
+    12px 18px 25px var(--shade),
+    inset 2px 2px 4px var(--highlight);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.topics button {
+  padding: 6px 9px;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.topics button[aria-pressed='true'] {
+  background: var(--soft);
+  box-shadow: var(--inset);
+  color: var(--accent);
+}
+
+.playback {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 5px;
+}
+
+.playback span {
+  margin-right: 5px;
+  font-family: monospace;
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.playback button {
+  min-height: 28px;
+  padding: 5px;
+  font-size: 11px;
+}
+
+.playback button:hover {
+  border-radius: 4px;
+  background: var(--soft);
+}
+
+/* 内容类型 / Content type tabs */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 23px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.headlines + .tabs {
+  margin-top: 20px;
+}
+
+.tabs button {
+  padding: 11px 0;
+  border-bottom: 2px solid transparent;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.tabs button[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* 文章卡片 / Article card */
+.story {
+  display: grid;
+  grid-template-columns: 35px minmax(0, 1fr) 29px;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 22px 20px;
+  border: 1px solid color-mix(in srgb, var(--line) 62%, transparent);
+  border-radius: 12px;
+  background: var(--raised);
+  box-shadow:
+    var(--lift),
+    inset 1px 1px 0 var(--highlight);
+  transition:
+    transform 0.18s,
+    box-shadow 0.18s;
+}
+
+.story:hover {
+  transform: translateY(-2px);
+}
+
+.number {
+  padding-top: 4px;
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.storyTitle {
+  display: block;
+  margin: 9px 0;
+  font: 500 19px/1.5 var(--display);
+}
+
+.story p {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.95;
+  color: var(--muted);
+}
+
+.storyFooter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.save {
+  align-self: start;
+  border-radius: 6px;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--muted);
+}
+
+.save[aria-pressed='true'] {
+  color: var(--accent);
+}
+
+/* 活动入口 / Activity teaser */
+.activity {
+  display: grid;
+  grid-template-columns: 61px 1fr auto;
+  align-items: center;
+  gap: 17px;
+  margin-top: 26px;
+  padding: 21px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--raised);
+  box-shadow:
+    var(--lift),
+    inset 1px 1px 0 var(--highlight);
+}
+
+.datebox {
+  border-right: 1px solid var(--line);
+  font: 20px var(--display);
+  overflow-wrap: anywhere;
+}
+
+.datebox span {
+  display: block;
+  font: 9px var(--body);
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.activity h2 {
+  margin: 0 0 7px;
+  font: 16px var(--display);
+}
+
+.activity p {
+  margin: 0;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.activityLink {
+  font-size: 11px;
+  color: var(--accent);
+}
+
+@media (min-width: 1550px) {
+  .slide {
+    min-height: 350px;
+  }
+
+  .heroCopy {
+    max-width: 65%;
+  }
+
+  .heroArt {
+    right: -20px;
+    width: 360px;
+    height: 360px;
+  }
+}
+
+@media (max-width: 1180px) {
+  .controls {
+    flex-wrap: wrap;
+  }
+
+  .playback {
+    margin-left: auto;
+  }
+
+  .heroCopy {
+    max-width: 88%;
+  }
+
+  .heroCopy h2 {
+    font-size: 26px;
+  }
+
+  .heroArt {
+    right: -160px;
+    opacity: 0.25;
+  }
+
+  .story {
+    padding: 19px 15px;
+  }
+}
+
+@media (max-width: 950px) {
+  .heroCopy {
+    max-width: 72%;
+  }
+
+  .heroArt {
+    right: -100px;
+    opacity: 0.6;
+  }
+}
+
+@media (max-width: 600px) {
+  .slide {
+    min-height: 360px;
+    padding: 24px 22px;
+  }
+
+  .heroCopy {
+    max-width: 100%;
+  }
+
+  .heroCopy h2 {
+    font-size: 25px;
+  }
+
+  .heroCopy p {
+    min-height: 90px;
+    font-size: 12px;
+  }
+
+  .heroArt {
+    opacity: 0.23;
+  }
+
+  .headlines {
+    border-radius: 13px;
+  }
+
+  .controls {
+    gap: 7px;
+    padding: 10px 12px;
+  }
+
+  .topics button {
+    padding: 5px 7px;
+    font-size: 12px;
+  }
+
+  .story {
+    grid-template-columns: 24px 1fr 22px;
+    gap: 6px;
+    padding: 19px 14px;
+  }
+
+  .activity {
+    grid-template-columns: 43px 1fr;
+    gap: 12px;
+    padding: 17px 13px;
+  }
+
+  .activityLink {
+    grid-column: 2;
+  }
+}

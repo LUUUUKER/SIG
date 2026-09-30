@@ -1,0 +1,115 @@
+/*
+ * 概览 / Overview
+ * 文章详情样式，取自原型 .detail / .back / .lede / .analysis-box / .sources 的最终生效规则。
+ * 原型用 h3 作小节标题，这里为了标题层级正确改用 h2，保持相同字号。
+ * Article detail styles from the prototype. Section titles use h2 (the prototype used h3) for a
+ * correct heading outline, at the same size.
+ */
+
+.detail {
+  padding: 28px 32px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--paper);
+  box-shadow:
+    var(--lift),
+    inset 1px 1px 0 var(--highlight);
+}
+
+.back {
+  margin-bottom: 28px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 13px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.tag {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.detail h1 {
+  margin: 18px 0;
+  font: 36px/1.5 var(--display);
+  letter-spacing: -0.025em;
+}
+
+.lede {
+  padding-bottom: 27px;
+  border-bottom: 1px solid var(--line);
+  font-size: 15px;
+  line-height: 2;
+  color: var(--muted);
+}
+
+.detail h2 {
+  margin: 31px 0 12px;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.detail p,
+.keyPoints {
+  font-size: 14px;
+  line-height: 2.1;
+  color: var(--muted);
+}
+
+.keyPoints {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.analysisBox {
+  margin: 25px 0;
+  padding: 22px 25px;
+  border-left: 2px solid var(--accent);
+  border-radius: 0 10px 10px 0;
+  background: var(--soft);
+  box-shadow: inset 0 1px 0 var(--highlight);
+}
+
+.detail .analysisBox h2 {
+  margin-top: 0;
+}
+
+.analysisBox p {
+  margin-bottom: 0;
+}
+
+.sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 26px;
+  font-size: 12px;
+}
+
+.sources a {
+  border-bottom: 1px solid var(--accent);
+}
+
+.detail .demoNote {
+  margin-top: 35px;
+  font-size: 11px;
+}
+
+@media (max-width: 600px) {
+  .detail {
+    padding: 23px 19px;
+  }
+
+  .detail h1 {
+    font-size: 29px;
+  }
+}

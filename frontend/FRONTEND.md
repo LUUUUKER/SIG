@@ -2,7 +2,7 @@
 
 > 维护规则：前端任何文件的新增、删除、改名，以及调用链、状态、已定规则的变化，都要**在同一次改动里**更新本文件。状态列必须如实标注：✅ 已实现 ／ 📝 计划中。
 >
-> 最近更新：2026-09-29 · 阶段 0 完成（F1、F2 通过）；阶段 1a 完成（L1–L23、S1–S19 通过）；阶段 1b 完成（样式、外壳、页眉、左栏、助手面板；H5、H7、C1–C9、C15、C16、F1、F2 通过），并修复首屏主题闪烁（L24、V13 通过）。
+> 最近更新：2026-09-29 · 阶段 0 完成（F1、F2 通过）；阶段 1a 完成（L1–L23、S1–S19 通过）；阶段 1b 完成（样式、外壳、页眉、左栏、助手面板；H5、H7、C1–C9、C15、C16、F1、F2 通过），并修复首屏主题闪烁（L24、V13 通过）；阶段 1c 完成（完整页面与数据接入；H1–H4、H6、H8、H9、C10–C14、P1–P8 通过，共 87 个单元测试 + F2、V13）。
 
 ## 1. 概览
 
@@ -60,14 +60,14 @@ frontend/
 └─ src/
    ├─ main.tsx               入口
    ├─ test/setup.ts          Vitest 全局准备（默认窄屏 matchMedia、每个测试后重置 store）
-   ├─ test/testUtils.tsx     测试辅助：setViewportMatches、resetStores、renderApp
+   ├─ test/testUtils.tsx     测试辅助：setViewportMatches、resetStores、createTestApi、TestProviders、renderApp
    ├─ app/                   组装层：布局、路由、全局 hook
    ├─ styles/                设计 token 与全局样式
    ├─ lib/                   纯函数
    ├─ services/              数据类型、API 接口与 mock 实现、Query 钩子
    ├─ state/                 Zustand 界面状态
    ├─ components/            通用组件
-   └─ features/              feed / articles / saved / events / chat
+   └─ features/              feed / articles / saved / events / chat / notFound
 ```
 
 ## 4. 文件职责
@@ -76,14 +76,13 @@ frontend/
 
 | 文件 | 状态 | 职责 |
 |---|---|---|
-| `main.tsx` | ✅ | 引入 `tokens.css`、`base.css`，用 `react-router/dom` 的 `RouterProvider` 挂载路由；1c 加 QueryClientProvider |
-| `app/router.tsx` | ✅ | `appRoutes`（测试复用）与 `createAppRouter()`；路由 `/`、`/domain/:domain`、`/article/:articleId`、`/saved`、`/events`、`*`，全部挂在 AppShell 下；内容类型用 `?type=` |
-| `app/PlaceholderPage.tsx` | ✅ 临时（1c 删除） | `PlaceholderPage`、`DomainPlaceholder`：1b 阶段各路由的占位页，明确写"将在 1c 实现" |
-| `app/AppShell.tsx` + `.module.css` | ✅ | 页眉 + 左栏 + `<main id="main-content">`（路由出口）+ ChatPanel + ToastHost。桌面：页面不滚动，助手打开时 workspace 右侧让出 `--chat-width`；窄屏：覆盖面板 + 遮罩。屏宽跨过 951px 时设置默认显隐；Esc（窄屏打开时或焦点在面板内）关闭；关闭后焦点回到页眉开关。1b 的更新状态为静态值，点击刷新提示"将在 1c 接入" |
+| `main.tsx` | ✅ | 引入 `tokens.css`、`base.css`；`QueryClientProvider`（`createQueryClient()`）包住 `react-router/dom` 的 `RouterProvider` |
+| `app/router.tsx` | ✅ | `appRoutes`（测试复用）与 `createAppRouter()`；`/` 与 `/domain/:domain` → FeedPage，`/article/:articleId` → ArticlePage，`/saved` → SavedPage，`/events` → EventPage，`*` → NotFoundPage，全部挂在 AppShell 下；内容类型用 `?type=`。1b 的临时 `PlaceholderPage.tsx` 已在 1c 删除 |
+| `app/AppShell.tsx` + `.module.css` | ✅ | 页眉 + 左栏 + `<main id="main-content">`（路由出口）+ ChatPanel + ToastHost。桌面：页面不滚动，助手打开时 workspace 右侧让出 `--chat-width`；窄屏：覆盖面板 + 遮罩。屏宽跨过 951px 时设置默认显隐；Esc（窄屏打开时或焦点在面板内）关闭；关闭后焦点回到页眉开关。页眉更新状态来自 `useAutoRefresh()` |
 | `app/useMediaQuery.ts` | ✅ | `useMediaQuery(query)`（useSyncExternalStore 订阅 matchMedia）、`DESKTOP_QUERY = (min-width: 951px)` |
 | `app/useTheme.ts` | ✅ | `resolveTheme(mode, now)`、`useMinuteClock()`（每分钟变化一次的分钟序号）、`useTheme()`：写入 `<html data-theme>` |
 | `app/useVisitTracker.ts` | ✅ | 启动时调用 `uiStore.recordVisit()`；该动作每个会话只生效一次，StrictMode 重复执行也安全 |
-| `app/useAutoRefresh.ts` | 📝（1c） | 应用启动时调用一次：`needsRefresh(lastRunAt, now, 8h)` 为真则开始后台更新 |
+| `app/useAutoRefresh.ts` | ✅ | 返回 RefreshStatus 的 props。信息流首次加载后本会话只判断一次（`refreshStore.autoRefreshAttempted`，StrictMode 安全）：`needsRefresh(lastRunAt, now, 8h)` 为真则发起；轮询到结束交给 `refreshStore.completeRun`；手动更新且无新内容提示"已是最新内容"；时间优先用最近一次成功的完成时间，`now` 来自分钟时钟 |
 
 ### 4.2 样式 `styles/`
 
@@ -96,7 +95,8 @@ frontend/
 
 | 文件 | 函数 | 状态 | 作用 |
 |---|---|---|---|
-| `domains.ts` | `DOMAINS`、`DOMAIN_MARKS`、`CONTENT_TYPES`、`DEFAULT_CONTENT_TYPE` | ✅ | 七领域顺序与导航符号、三种内容类型 |
+| `domains.ts` | `DOMAINS`、`DOMAIN_MARKS`、`CONTENT_TYPES`、`DEFAULT_CONTENT_TYPE`、`parseContentType(value)` | ✅ | 七领域顺序与导航符号、三种内容类型；`parseContentType` 把 `?type=` 转成合法类型（1c 新增，FeedPage 与 SidebarNav 共用） |
+| `layoutIds.ts` | `MAIN_CONTENT_ID` | ✅ | 布局元素 ID（1c 新增）。放在 lib 而不是 app，是为了让 features 引用时不违反分层 |
 | `laTime.ts` | `losAngelesParts(now)` | ✅ | 当前时刻换算为洛杉矶的年月日时分（Intl 时区，自动处理夏令时） |
 | | `themeForTime(now)` | ✅ | 洛杉矶 06:00–18:00 返回 `light`，其余 `dark` |
 | | `dailyEncouragement(now)` | ✅ | 同一洛杉矶日期返回同一句鼓励语，相邻两天不同 |
@@ -118,7 +118,9 @@ frontend/
 | `api.ts` | ✅ | `SigApi` 接口：`getFeed`、`getArticle`、`getArticleAnalysis`（打开详情才生成）、`listSaved`、`setSaved`、`startRefresh`、`getRefreshStatus`、`searchEvents`、`sendChat`；导出当前实现 `api = createMockApi()` |
 | `mockData.ts` | ✅ | `buildMockArticles(now)`（七领域新闻 + 1 条超 24h 的过期新闻 + 名人动态 + 7 篇精选）、`buildRefreshBatch(completedAt)`（模拟更新新增 3 条）、`buildDemoAnalysis(article)`；全部 `isDemo: true` |
 | `mockApi.ts` | ✅ | `createMockApi({ now, latencyMs, refreshDurationMs, initialLastRunAt })`：内存状态、模拟延迟（默认 250ms）、`configureMock({ failNext })` 模拟一次失败；默认上次更新为 9 小时前，使首次打开触发模拟更新（约 2 秒）；进行中不重复发起；重复更新不重复加入内容 |
-| `queries.ts` | 📝（1c） | TanStack Query 钩子：`useFeed`、`useArticle`、`useArticleAnalysis`、`useSaved`、`useToggleSaved`（先改界面，失败回滚）、`useRefresh`（发起并轮询）、`useEventSearch` |
+| `apiContext.ts` | ✅ | `ApiContext`（默认值为 `api`）与 `useApi()`：测试注入全新 mock，避免测试之间共享内存状态 |
+| `queryClient.ts` | ✅ | `createQueryClient({ retry })`：数据 1 分钟内新鲜、窗口聚焦不重新获取；失败重试 1 次但 `NotFoundError` 不重试（重试规则只在这里定义）；测试传 `retry: false` |
+| `queries.ts` | ✅ | `queryKeys`、`REFRESH_POLL_MS = 1000`；`useFeed`、`useArticle`、`useArticleAnalysis`、`useSaved`；`useToggleSaved`（`onMutate` 乐观更新收藏列表，`onError` 回滚，`onSettled` 触发重新获取但不等待，避免调用方的提示被推迟；不弹提示，数据层不依赖状态层）；`useStartRefresh`、`useRefreshRun(runId)`（running 时每秒轮询）；`useEventSearch(query)`（null 时不请求）。原计划的 `useRefresh` 拆成这两个钩子，由 `useAutoRefresh` 组合 |
 
 ### 4.5 界面状态 `state/`
 
@@ -130,6 +132,7 @@ frontend/
 | `uiStore.ts` | ✅ | `themeMode`、`chatOpen`、`readingContext`（默认"为你精选 · 最近 24 小时"）、`previousVisitAt`、`lastVisitAt`、`visitRecorded`（1b 新增：本会话是否已记录访问，不持久化，使 `recordVisit` 只生效一次）、`seenClusters`、`activityDraft`、`submittedActivityQuery`、`activityCategory`；动作 `setThemeMode`、`setChatOpen`、`toggleChat`、`setReadingContext`、`recordVisit`、`markClusterSeen`、`updateActivityDraft`、`submitActivityQuery`、`setActivityCategory`。持久化键 `sig-ui`，只存 `themeMode`、`lastVisitAt`、`seenClusters` |
 | `chatSessionStore.ts` | ✅ | `sessions`（LRU 上限 10）、`activeSessionId`（null = 新对话空白页）、`draft`（全局一份，不持久化）；每会话 `status`（idle / replying / error）、`errorMessage`、`pendingRequest`。动作 `setDraft`、`sendMessage(text, contextRef)`、`retry(sessionId)`、`startNewSession`、`switchSession`、`deleteSession`。工具 `makeSessionTitle`、`evictLeastRecentlyUsed`、`selectActiveSession`、`selectSessionsByRecent`。持久化键 `sig-chat-sessions`；刷新时仍在回复中的会话变为"回复被中断，可重试" |
 | `toastStore.ts` | ✅ | 同一时间一条提示（新提示替换旧提示并重置计时），6.5 秒自动消失；`showToast(message, undo?)`、`dismissToast`、`undoToast` |
+| `refreshStore.ts` | ✅ | 1c 新增，会话内状态、不持久化：`autoRefreshAttempted`、`activeRunId`、`activeRunIsManual`、`lastHandledRunId`、`latestRunAt`、`lastRunFailed`、`pendingNewArticleCount`；动作 `markAutoRefreshAttempted`、`beginRun`、`completeRun(run)`（同一个 run 只处理一次，成功累加待显示条数）、`markStartFailed`、`clearPending`。页眉与"有 N 条新内容"共享它 |
 
 ### 4.6 通用组件 `components/`
 
@@ -144,25 +147,32 @@ frontend/
 | `StatusView.tsx` + `.module.css` | ✅ | `StatusView({ state, message, onRetry })`：loading / empty 用 `role="status"`，error 用 `role="alert"` 并带重试 |
 | `ToastHost.tsx` + `.module.css` | ✅ | 始终存在的 `role="status"` 区域，显示当前提示与"撤销" |
 | `icons/Icons.tsx` | ✅ | `PanelIcon`、`SearchIcon`、`RefreshIcon`、`HistoryIcon`、`PlusIcon`、`CloseIcon`（线性 SVG，对读屏隐藏） |
+| `PageHeading.tsx` + `.module.css` | ✅ | 1c 新增：紧凑页面标题 `<h1>`（24px）；首页用 `visuallyHidden` 只对读屏可见（原型首页不显示大标题） |
 
 ### 4.7 页面与业务 `features/`
 
 | 文件 | 状态 | 职责 |
 |---|---|---|
-| `feed/FeedPage.tsx` | 📝 | 首页与领域页共用；读 `?type`；首页 + 新闻时显示头版轮播；列表；首页底部活动入口 |
-| `feed/NewContentBanner.tsx` | 📝 | "有 N 条新内容"，点击才刷新列表 |
-| `feed/HeadlineCarousel.tsx` | 📝 | 头版大卡片、领域标签、计数、前后切换、暂停 |
-| `feed/useCarousel.ts` | 📝 | 8 秒切换；悬停 / 键盘焦点 / 标签页隐藏 / 减少动态效果时不切换；手动或触摸后暂停；宽度变化时重新对齐（ResizeObserver） |
-| `feed/ContentTypeTabs.tsx` | 📝 | 新闻 / 精选文章 / 名人动态 |
-| `feed/ArticleCard.tsx` | 📝 | 领域、类型、时长、「新」「更新」、标题、摘要、来源外链、收藏、与 sig 深聊 |
-| `feed/ActivityTeaser.tsx` | 📝 | 首页活动入口；地点与范围取自活动表单状态（不写死 LA） |
-| `feed/useScrollMemory.ts` | 📝 | 记住并恢复中间内容区滚动位置（React Router 自带的滚动恢复管不到内部滚动容器） |
-| `articles/ArticlePage.tsx` | 📝 | 重点摘要、AI 分析（进入后加载，含加载与失败状态）、来源、返回；设置阅读上下文；记为已看 |
-| `saved/SavedPage.tsx` | 📝 | 收藏列表（不受 24h 限制）；空状态 |
-| `events/EventPage.tsx` | 📝 | 组合表单、分类、结果 |
-| `events/EventSearchForm.tsx` | 📝 | 地点、范围、开始、结束、预算 + 放大镜提交 |
-| `events/EventCategoryTabs.tsx` | 📝 | 全部 / 演出 / 比赛 / 社交活动 / 展览与放映 |
-| `events/EventResults.tsx` | 📝 | 尚未接入 / 加载 / 无结果 / 失败 / 结果 |
+| `feed/FeedPage.tsx` | ✅ | 首页与领域页共用：领域名不合法显示 404；`?type=` 决定内容类型；阅读上下文"<领域或为你精选> · <类型>"；加载 / 失败可重试；首页 + 新闻显示头版轮播（没有头版就不显示）；NewContentBanner、ContentTypeTabs、ArticleList；首页底部 ActivityTeaser；`useScrollMemory` |
+| `feed/ArticleList.tsx` | ✅ | 1c 新增，信息流与稍后阅读共用：用 `badgeFor` 算标记、`useSaveToggle` 处理收藏；"与 sig 深聊"＝进入详情 + 打开助手并聚焦输入框 + 提示；空列表显示传入的空状态文案 |
+| `feed/NewContentBanner.tsx` | ✅ | "有 N 条新内容 · 点击查看"，N ≤ 0 不渲染；点击后由 FeedPage 清零并重新获取信息流 |
+| `feed/HeadlineCarousel.tsx` | ✅ | 滚动吸附大卡片（hero 渐变 + 圆环 orb）、"领域 / 头版"、阅读全文（站内）与阅读来源（新标签页）；领域标签、"01 / 0N"、前后、播放 / 暂停；非当前幻灯片 `inert`；用户拖动时按位置同步；ResizeObserver 在宽度变化后重新对齐；空列表不渲染 |
+| `feed/useCarousel.ts` | ✅ | `useCarousel({ count, scrollToIndex, intervalMs })`：8 秒前进并循环；悬停 / 焦点在内 / 标签页隐藏时跳过；减少动态效果默认暂停；`goTo` / `next` / `prev` 手动切换会暂停，触摸也暂停；`syncIndex` 只同步不滚动；返回 `holdHandlers` |
+| `feed/ContentTypeTabs.tsx` | ✅ | 新闻 / 精选文章 / 名人动态，`aria-pressed` 表示当前项 |
+| `feed/ArticleCard.tsx` | ✅ | 序号、领域、类型、"深读 N 分钟"、「新」「更新」、演示；标题链接到 `/article/:id`；来源外链 `target="_blank"` + `rel="noopener noreferrer"`；与 sig 深聊；收藏按钮 `aria-pressed` + 名称在"收藏文章 / 取消收藏"间切换 |
+| `feed/ActivityTeaser.tsx` | ✅ | 首页活动入口；地点与范围取自 `uiStore.activityDraft`（不写死 LA），链接到 `/events` |
+| `feed/useScrollMemory.ts` | ✅ | `useScrollMemory(key, ready)`：持续记录 `#main-content` 与页面的滚动位置；ready 后每个 key 只恢复一次：浏览器返回（POP）且有记录则恢复，否则回到顶部；`clearScrollMemory()` 供测试 |
+| `feed/useSaveToggle.ts` | ✅ | 1c 新增：包装 `useToggleSaved`，提供 `isSaved(id)` 与 `toggleSaved(article)`，负责"已加入稍后阅读 / 已取消收藏 / 收藏没有成功，已恢复原状态"提示 |
+| `feed/Feed.module.css` | ✅ | 头版、类型切换、卡片、标记、新内容提示、活动入口样式（取自原型最终规则） |
+| `articles/ArticlePage.tsx` + `Article.module.css` | ✅ | 返回（站内后退，直接打开时回首页）、元信息、标题、导语、重点摘要；`AnalysisSection` 进入后才加载，含"AI 分析生成中…"与失败重试；还值得追问什么；原始资料外链；围绕这篇继续聊；演示说明。加载成功后设置阅读上下文、`markClusterSeen`、滚到顶部；找不到与其他失败分开显示。小节标题用 h2（原型为 h3）以保证标题层级 |
+| `saved/SavedPage.tsx` | ✅ | 标题"稍后阅读"；加载 / 失败可重试；`ArticleList`（不受 24h 限制，最近收藏在前）；空状态"还没有收藏。点击内容旁的 ◇ 即可加入。" |
+| `events/EventPage.tsx` | ✅ | 区分草稿与已提交查询；编辑时清除对应字段错误；提交时 `validateFilters`，通过则 `submitActivityQuery(toQuery(draft))`；按已提交查询请求并映射为 idle / loading / error / not_connected；阅读上下文"近期活动 · 地点 · 范围" |
+| `events/EventSearchForm.tsx` | ✅ | 受控表单（`noValidate`，用自己的校验文案）：地点、范围、开始、结束（`min` = 开始）、预算（占位"不限"）；错误显示在字段下方且位于 `<label>` 之外（否则会混进输入框的可访问名称；`role="alert"`、`aria-invalid`、`aria-describedby`）；放大镜按钮名称"搜索活动" |
+| `events/EventCategoryTabs.tsx` | ✅ | 全部 / 演出 / 比赛 / 社交活动 / 展览与放映，`aria-pressed` |
+| `events/EventResults.tsx` | ✅ | 加载 / 失败（条件保留）/ 尚未接入（复述已记录的条件，明确不会显示任何活动）；下方只显示标注"分类示例"的方向卡片，按分类过滤，没有任何链接或票价 |
+| `events/Events.module.css` | ✅ | 紧凑表单（宽屏一行、951–1550 三列、≤750 两列）、分类、提示与示例卡片样式 |
+| `notFound/NotFoundPage.tsx` | ✅ | 1c 新增：404 标题、说明与"回到为你精选"链接；FeedPage 遇到不合法的领域名也显示它 |
+| `chat/useOpenChat.ts` | ✅ | 1c 新增：`useOpenChat()` 返回 `openChat()`，显示助手并在下一个事件循环把焦点放进 `#chat-input` |
 | `chat/ChatPanel.tsx` | ✅ | `ChatPanel({ hidden })`：标题栏（S 标记、sig · 阅读伙伴、历史、新对话）、ContextSummary、主体三选一（历史 / 当前会话 MessageList / 欢迎页 + 3 个快捷问题）、ChatComposer、演示说明。发送时先清空草稿再以当前阅读上下文发送；回复中禁用输入。历史的"X 前"以打开历史的时刻为准 |
 | `chat/ChatHistory.tsx` | ✅ | 面板内历史列表：标题、首条消息的关联上下文、"X 前"；当前会话 `aria-current`；点击切换，单条删除；空状态"还没有历史对话。" |
 | `chat/ContextSummary.tsx` | ✅ | `<details>` 默认折叠为"当前 · 标题"，展开显示完整标题与说明 |
@@ -173,14 +183,15 @@ frontend/
 ## 5. 调用链
 
 1. **启动**：`main` → `AppShell` → `useTheme`（主题）、`useVisitTracker`（访问时间）、`useAutoRefresh`（是否后台更新）。
-2. **首页**：`FeedPage` → `useFeed` → `api.getFeed` → `HeadlineCarousel`（头版）+ `ContentTypeTabs` + `ArticleCard[]`（每张用 `badgeFor` 算标记）+ `ActivityTeaser`。
-3. **自动更新**：`useAutoRefresh` → `needsRefresh` → `useRefresh` → `api.startRefresh` → 轮询 `api.getRefreshStatus` → 完成 → `RefreshStatus` 显示新时间、`NewContentBanner` 显示新增条数 → 点击后使 `useFeed` 重新获取。
-4. **读文章**：`ArticleCard` 标题 → 路由 `/article/:id` → `ArticlePage` → `useArticle` + `useArticleAnalysis` → 设置阅读上下文 + 记为已看；返回 → `navigate(-1)` → `useScrollMemory` 恢复滚动。
-5. **收藏**：`ArticleCard` ◇ → `useToggleSaved` → 乐观更新 → `api.setSaved` → 失败回滚 + 提示。
+2. **首页**：`FeedPage` → `useFeed` → `useApi().getFeed` → `HeadlineCarousel`（头版）+ `ContentTypeTabs` + `ArticleList` → `ArticleCard[]`（每张用 `badgeFor` 算标记）+ `ActivityTeaser`。
+3. **自动更新**：`AppShell` → `useAutoRefresh` → 信息流加载后 `needsRefresh`（本会话一次）→ `useStartRefresh` → `api.startRefresh` → `refreshStore.beginRun` → `useRefreshRun` 每秒轮询 `api.getRefreshStatus` → 结束 → `refreshStore.completeRun` → 页眉 `RefreshStatus` 显示新时间；`FeedPage` 的 `NewContentBanner` 显示待显示条数 → 点击 → `clearPending` + 使 `queryKeys.feed` 失效 → 列表重新获取。
+4. **读文章**：`ArticleCard` 标题 → 路由 `/article/:id` → `ArticlePage` → `useArticle` + `AnalysisSection`（`useArticleAnalysis`）→ 设置阅读上下文 + `markClusterSeen`；返回 → `navigate(-1)` → `FeedPage` 的 `useScrollMemory` 在 POP 时恢复滚动。
+5. **收藏**：`ArticleCard` ◇ → `ArticleList` → `useSaveToggle.toggleSaved` → `useToggleSaved`（乐观更新收藏列表）→ `api.setSaved` → 成功提示 / 失败回滚 + 提示 → 重新获取收藏列表。
+   **深聊**：`ArticleCard` "与 sig 深聊" → `ArticleList.discuss` → 进入 `/article/:id` + `useOpenChat`（显示助手、聚焦输入框）+ 提示。
 6. **聊天**：`ChatComposer` → `chatSessionStore.sendMessage`（无会话则创建；冻结 `sessionId` + `ContextRef`）→ `api.sendChat` → 回复写回冻结的会话 → `MessageList` 显示；失败显示重试。
    **历史**：`ChatHistory` → `switchSession(id)`（刷新 `lastActiveAt`）/ `deleteSession(id)`；`startNewSession()` 只清空当前视图，发出首条消息后才入列，超过 10 个时淘汰 `lastActiveAt` 最早的非当前会话。
 7. **助手显隐**：`ChatToggle` → `uiStore.toggleChat` → 桌面释放中栏宽度；窄屏从页眉下方覆盖 + 遮罩；关闭后焦点回到开关；草稿与消息保留。
-8. **活动**：`EventSearchForm` 编辑 `draftFilters` → 提交 → `validateFilters` → `submittedFilters` → `useEventSearch` → `api.searchEvents` → `EventResults`（阶段 1 返回"尚未接入"）。
+8. **活动**：`EventSearchForm` 编辑 → `uiStore.updateActivityDraft` → 提交 → `validateFilters`（有错误就显示并停止）→ `toQuery` → `uiStore.submitActivityQuery` → `useEventSearch` → `api.searchEvents` → `EventResults`（阶段 1 返回"尚未接入"，只显示分类示例）。
 
 ## 6. 测试
 
@@ -258,15 +269,15 @@ frontend/
 
 | 编号 | 场景 → 期望 | 状态 |
 |---|---|---|
-| H1 | `useCarousel`：每 8 秒前进，末条后回到首条 | ⬜ |
-| H2 | `useCarousel`：悬停、焦点在内、标签页隐藏、减少动态效果时不前进 | ⬜ |
-| H3 | `useCarousel`：手动切换后暂停；播放恢复 | ⬜ |
-| H4 | `useCarousel`：0 条不启动计时器；1 条不前进 | ⬜ |
+| H1 | `useCarousel`：每 8 秒前进，末条后回到首条 | ✅ 2026-09-30 |
+| H2 | `useCarousel`：悬停、焦点在内、标签页隐藏、减少动态效果时不前进 | ✅ 2026-09-30 |
+| H3 | `useCarousel`：手动切换后暂停；播放恢复 | ✅ 2026-09-30 |
+| H4 | `useCarousel`：0 条不启动计时器；1 条不前进 | ✅ 2026-09-30 |
 | H5 | `useTheme`：自动模式 05:59 深色，走到 06:00 后一分钟内变浅色；手动优先；写入 `data-theme` | ✅ 2026-09-29 |
-| H6 | `useAutoRefresh`：9h 前 → 只发起一次（StrictMode 下也不重复）；1h 前 → 不发起 | ⬜ |
+| H6 | `useAutoRefresh`：9h 前 → 只发起一次（StrictMode 下也不重复）；1h 前 → 不发起 | ✅ 2026-09-30 |
 | H7 | `useVisitTracker`：存量访问时间成为上次访问时间，再写入本次；首次为空 | ✅ 2026-09-29 |
-| H8 | `useScrollMemory`：离开记录、返回恢复 | ⬜ |
-| H9 | `useToggleSaved`：立即显示已收藏；失败回滚并提示 | ⬜ |
+| H8 | `useScrollMemory`：离开记录、返回恢复 | ✅ 2026-09-30 |
+| H9 | `useToggleSaved`：立即显示已收藏；失败回滚并提示 | ✅ 2026-09-30 |
 
 **组件 C（1b–1c）**
 
@@ -281,11 +292,11 @@ frontend/
 | C7 | ChatComposer：Enter 发送；Shift+Enter 换行；输入法组合中不发；空白禁发；发送后清空并缩回 | ✅ 2026-09-29 |
 | C8 | MessageList：用户消息显示"关联：…"；回复中提示；失败有重试 | ✅ 2026-09-29 |
 | C9 | ContextSummary：默认折叠，展开显示完整标题 | ✅ 2026-09-29 |
-| C10 | ArticleCard：字段齐全；外链 `target=_blank` + `rel=noopener noreferrer`；新/更新标记；收藏无障碍名称随状态变 | ⬜ |
-| C11 | HeadlineCarousel：条数、标签、"01 / 0N"；非当前幻灯片不可聚焦 | ⬜ |
-| C12 | EventSearchForm：默认值；日期反向报错不提交；改正后提交；放大镜名称"搜索活动" | ⬜ |
-| C13 | EventResults：not_connected 显示说明，无伪造活动 | ⬜ |
-| C14 | NewContentBanner：显示 N；点击前列表不变，点击后刷新 | ⬜ |
+| C10 | ArticleCard：字段齐全；外链 `target=_blank` + `rel=noopener noreferrer`；新/更新标记；收藏无障碍名称随状态变 | ✅ 2026-09-30 |
+| C11 | HeadlineCarousel：条数、标签、"01 / 0N"；非当前幻灯片不可聚焦 | ✅ 2026-09-30 |
+| C12 | EventSearchForm：默认值；日期反向报错不提交；改正后提交；放大镜名称"搜索活动" | ✅ 2026-09-30 |
+| C13 | EventResults：not_connected 显示说明，无伪造活动 | ✅ 2026-09-30 |
+| C14 | NewContentBanner：显示 N；点击前列表不变，点击后刷新 | ✅ 2026-09-30 |
 | C15 | ChatHistory：按 `lastActiveAt` 倒序列出标题、关联文章、"X 前"；点击切换；单条删除；空状态 | ✅ 2026-09-29 |
 | C16 | ChatPanel 标题栏：有"历史""新对话"，无"重置"，无显隐开关 | ✅ 2026-09-29 |
 
@@ -293,14 +304,14 @@ frontend/
 
 | 编号 | 场景 → 期望 | 状态 |
 |---|---|---|
-| P1 | 首页：轮播、新闻列表、活动入口；头版条数 = 有内容的领域数 | ⬜ |
-| P2 | 切"精选文章" → `?type=精选文章`，轮播隐藏 | ⬜ |
-| P3 | `/domain/AI` 只显示 AI；无内容领域显示空状态 | ⬜ |
-| P4 | 详情：重点摘要；分析先加载后显示，失败可重试；聊天上下文为本文；返回恢复列表与滚动 | ⬜ |
-| P5 | 稍后阅读：空状态；收藏后出现；超过 24h 仍显示 | ⬜ |
-| P6 | 活动：默认值、分类切换、提交后显示尚未接入 | ⬜ |
-| P7 | 未知网址 → 404 | ⬜ |
-| P8 | "与 sig 深聊" → 打开详情、展开助手、焦点进入输入框 | ⬜ |
+| P1 | 首页：轮播、新闻列表、活动入口；头版条数 = 有内容的领域数 | ✅ 2026-09-30 |
+| P2 | 切"精选文章" → `?type=精选文章`，轮播隐藏 | ✅ 2026-09-30 |
+| P3 | `/domain/AI` 只显示 AI；无内容领域显示空状态 | ✅ 2026-09-30 |
+| P4 | 详情：重点摘要；分析先加载后显示，失败可重试；聊天上下文为本文；返回恢复列表与滚动 | ✅ 2026-09-30 |
+| P5 | 稍后阅读：空状态；收藏后出现；超过 24h 仍显示 | ✅ 2026-09-30 |
+| P6 | 活动：默认值、分类切换、提交后显示尚未接入 | ✅ 2026-09-30 |
+| P7 | 未知网址 → 404 | ✅ 2026-09-30 |
+| P8 | "与 sig 深聊" → 打开详情、展开助手、焦点进入输入框 | ✅ 2026-09-30 |
 
 **端到端 V（1d）**：尺寸 1440×900、1920×1080、1024×768、768×1024、390×844。
 

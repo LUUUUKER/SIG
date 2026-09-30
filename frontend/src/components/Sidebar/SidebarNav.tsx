@@ -10,15 +10,14 @@
  * - SidebarNav()。链接定义见 navLinks.ts。/ Link definitions live in navLinks.ts.
  */
 import { NavLink, useSearchParams } from 'react-router'
-import { CONTENT_TYPES, DEFAULT_CONTENT_TYPE, DOMAINS, DOMAIN_MARKS, type ContentType } from '../../lib/domains'
+import { DOMAINS, DOMAIN_MARKS, parseContentType, type ContentType } from '../../lib/domains'
 import { PERSONAL_LINKS, domainPath } from './navLinks'
 import styles from './SidebarNav.module.css'
 
 /** 读取当前内容类型，非法值回到默认 / Current content type; invalid values fall back to the default. */
 function useCurrentContentType(): ContentType {
   const [searchParams] = useSearchParams()
-  const typeParam = searchParams.get('type')
-  return CONTENT_TYPES.find((type) => type === typeParam) ?? DEFAULT_CONTENT_TYPE
+  return parseContentType(searchParams.get('type'))
 }
 
 /** 导航项样式 / Nav item class, with the active variant. */
