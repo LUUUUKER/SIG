@@ -2,10 +2,14 @@
  * 概览 / Overview
  * 头版轮播：横向滚动吸附的大卡片（每领域一条）、领域标签、"01 / 07"计数、前后切换与播放/暂停。
  * 非当前幻灯片设为 inert（不可聚焦、读屏跳过）；宽度变化时重新对齐到当前条。
+ * 程序发起的平滑滚动进行中，忽略中途的滚动事件（否则会把当前条误同步为动画经过的位置）。
  * Headline carousel: scroll-snapped hero slides (one per domain), domain tabs, "01 / 07" counter,
- * prev/next and play/pause. Inactive slides are inert; realigns on width changes.
+ * prev/next and play/pause. Inactive slides are inert; realigns on width changes. While a
+ * programmatic smooth scroll runs, intermediate scroll events are ignored so the index never
+ * snaps back to a slide the animation merely passes.
  *
  * 包含 / Contents
+ * - PROGRAMMATIC_SCROLL_TIMEOUT_MS：程序滚动目标的兜底清除时间。/ fallback to clear the scroll target.
  * - HeadlineCarousel({ headlines })。
  */
 import { useCallback, useEffect, useRef } from 'react'
@@ -13,6 +17,8 @@ import { Link } from 'react-router'
 import type { Article } from '../../services/types'
 import { REDUCED_MOTION_QUERY, useCarousel } from './useCarousel'
 import styles from './Feed.module.css'
+
+export const PROGRAMMATIC_SCROLL_TIMEOUT_MS = 1_000
 
 interface HeadlineCarouselProps {
   headlines: Article[]
@@ -27,19 +33,36 @@ function padTwo(value: number): string {
  * 头版轮播 / Headline carousel.
  * 输入 / Input: headlines（已按领域顺序；为空时不渲染）。/ ordered headlines; renders nothing when empty.
  * 步骤 / Steps
- * 1. scrollToIndex：把轨道滚到第 i 条（减少动态效果时瞬移）。/ Scroll the track (instant with reduced motion).
- * 2. 用户拖动滚动时，按滚动位置同步当前条。/ Sync the index from user scrolling.
- * 3. 轨道宽度变化（助手显隐、窗口缩放）时重新对齐。/ Realign when the track width changes.
+ * 1. scrollToIndex：记下"程序滚动目标"，再把轨道滚到第 i 条（减少动态效果时瞬移）；1 秒后兜底清除目标。
+ *    Record the programmatic target, then scroll (instant with reduced motion); clear it after 1s at most.
+ * 2. 滚动事件：有程序目标时只等待到达目标（到达即清除），不同步中途位置；没有目标（用户拖动）才按位置同步。
+ *    With a programmatic target, wait for arrival and ignore intermediate positions; otherwise sync.
+ * 3. 用户开始触摸 / 拖动 / 滚轮时，取消程序目标，交还手动控制。/ User input cancels the target.
+ * 4. 轨道宽度变化（助手显隐、窗口缩放）时，对齐到程序目标或当前条。/ Realign to the target or index.
  */
 export function HeadlineCarousel({ headlines }: HeadlineCarouselProps) {
   const trackRef = useRef<HTMLDivElement>(null)
+  const scrollTargetRef = useRef<number | null>(null)
+  const scrollTargetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const scrollToIndex = useCallback((slideIndex: number) => {
-    const track = trackRef.current // 步骤 1 / Step 1
-    if (track === null || typeof track.scrollTo !== 'function') return
-    const reduced = typeof window.matchMedia === 'function' && window.matchMedia(REDUCED_MOTION_QUERY).matches
-    track.scrollTo({ left: slideIndex * track.clientWidth, behavior: reduced ? 'instant' : 'smooth' })
+  const clearScrollTarget = useCallback(() => {
+    scrollTargetRef.current = null
+    if (scrollTargetTimerRef.current !== null) clearTimeout(scrollTargetTimerRef.current)
+    scrollTargetTimerRef.current = null
   }, [])
+
+  const scrollToIndex = useCallback(
+    (slideIndex: number) => {
+      const track = trackRef.current // 步骤 1 / Step 1
+      if (track === null || typeof track.scrollTo !== 'function') return
+      clearScrollTarget()
+      scrollTargetRef.current = slideIndex
+      scrollTargetTimerRef.current = setTimeout(clearScrollTarget, PROGRAMMATIC_SCROLL_TIMEOUT_MS)
+      const reduced = typeof window.matchMedia === 'function' && window.matchMedia(REDUCED_MOTION_QUERY).matches
+      track.scrollTo({ left: slideIndex * track.clientWidth, behavior: reduced ? 'instant' : 'smooth' })
+    },
+    [clearScrollTarget],
+  )
 
   const carousel = useCarousel({ count: headlines.length, scrollToIndex })
   const { index, syncIndex } = carousel
@@ -49,12 +72,15 @@ export function HeadlineCarousel({ headlines }: HeadlineCarouselProps) {
     indexRef.current = index
   }, [index])
 
+  useEffect(() => clearScrollTarget, [clearScrollTarget])
+
   useEffect(() => {
-    const track = trackRef.current // 步骤 3 / Step 3
+    const track = trackRef.current // 步骤 4 / Step 4
     if (track === null || typeof ResizeObserver === 'undefined') return
     const observer = new ResizeObserver(() => {
       if (typeof track.scrollTo === 'function') {
-        track.scrollTo({ left: indexRef.current * track.clientWidth, behavior: 'instant' })
+        const alignIndex = scrollTargetRef.current ?? indexRef.current
+        track.scrollTo({ left: alignIndex * track.clientWidth, behavior: 'instant' })
       }
     })
     observer.observe(track)
@@ -66,6 +92,11 @@ export function HeadlineCarousel({ headlines }: HeadlineCarouselProps) {
   function handleScroll() {
     const track = trackRef.current // 步骤 2 / Step 2
     if (track === null || track.clientWidth === 0) return
+    const targetIndex = scrollTargetRef.current
+    if (targetIndex !== null) {
+      if (Math.abs(track.scrollLeft - targetIndex * track.clientWidth) <= 1) clearScrollTarget()
+      return
+    }
     const visibleIndex = Math.round(track.scrollLeft / track.clientWidth)
     if (visibleIndex !== indexRef.current) syncIndex(Math.min(headlines.length - 1, Math.max(0, visibleIndex)))
   }
@@ -77,7 +108,13 @@ export function HeadlineCarousel({ headlines }: HeadlineCarouselProps) {
       aria-roledescription="轮播"
       {...carousel.holdHandlers}
     >
-      <div className={styles.track} ref={trackRef} onScroll={handleScroll}>
+      <div
+        className={styles.track}
+        ref={trackRef}
+        onScroll={handleScroll}
+        onPointerDown={clearScrollTarget} // 步骤 3 / Step 3
+        onWheel={clearScrollTarget}
+      >
         {headlines.map((article, slideIndex) => {
           const source = article.sources[0]
           return (

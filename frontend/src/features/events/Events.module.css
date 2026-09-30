@@ -1,9 +1,9 @@
 /*
  * 概览 / Overview
  * 活动页样式，取自原型 .event-search / .event-tabs / .event-disclosure / .event-card(.activity)。
- * 表单：宽屏一行 5 个字段 + 放大镜；951–1550px 三列；≤750px 两列。
- * Events styles from the prototype. Form: five fields plus the button on wide screens, three
- * columns at 951–1550px, two columns at ≤750px.
+ * 表单：宽屏（>1550px）一行 5 个字段 + 放大镜；≤1550px 三列；≤750px 两列。
+ * Events styles from the prototype. Form: five fields plus the button above 1550px, three
+ * columns at ≤1550px, two columns at ≤750px.
  */
 
 .form {
@@ -174,7 +174,9 @@
   margin-top: 9px;
 }
 
-@media (min-width: 951px) and (max-width: 1550px) {
+/* ≤1550px 一律三列（含 751–950px；原型在该区间缺少断点会横向溢出），≤750px 再改两列。
+   Three columns at ≤1550px (including 751–950px, which the prototype missed), two at ≤750px. */
+@media (max-width: 1550px) {
   .form {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }

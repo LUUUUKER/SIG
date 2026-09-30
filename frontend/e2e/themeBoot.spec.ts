@@ -7,7 +7,9 @@
 import { expect, test } from '@playwright/test'
 
 test('V13: inline boot script sets the theme before the app bundle runs', async ({ page }) => {
-  await page.route('**/src/main.tsx', (route) => route.abort())
+  // 热更新后 Vite 会给入口加 ?t=时间戳，因此用正则同时匹配带参数的地址。
+  // After HMR Vite serves the entry as main.tsx?t=<timestamp>, so match with or without a query.
+  await page.route(/\/src\/main\.tsx(\?.*)?$/, (route) => route.abort())
 
   // 洛杉矶 20:00，自动模式 → 深色 / LA 20:00 in auto mode → dark
   await page.clock.setFixedTime(new Date('2026-01-16T04:00:00Z'))

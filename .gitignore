@@ -27,3 +27,6 @@ test-results/
 playwright-report/
 blob-report/
 playwright/.cache/
+
+# Playwright 人工对比截图 / manual comparison screenshots (V10)
+frontend/e2e/screenshots/
